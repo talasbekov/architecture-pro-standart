@@ -1,0 +1,47 @@
+@startuml C4-Container-Deposits-MVP
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title C4 Container Diagram — Открытие депозитов (MVP)
+
+Person(client, "Клиент")
+Person(bo, "Менеджер бэк-офиса")
+
+System_Ext(site, "Сайт банка")
+System_Ext(callcenter, "Система кол-центра")
+System_Ext(sms, "SMS-шлюз")
+
+System_Boundary(bank, "Банк «Стандарт»") {
+
+    Container(ib_web, "Интернет-банк (Web UI)", "ASP.NET MVC", "Пользовательский интерфейс подачи заявок")
+    Container(ib_api, "API интернет-банка", ".NET Framework", "Передаёт заявки в Backend депозитов")
+
+    Container(deposit_api, "Backend депозитов (MVP)", ".NET / Java", "Принимает заявки из онлайн-каналов и кол-центра, управляет процессом открытия депозитов")
+
+    Container(queue, "Очередь сообщений", "Message Queue", "Асинхронная передача заявок и событий")
+
+    Container(abs_api, "АБС API", "Delphi / PL-SQL", "Фиксация заявок и условий депозитов")
+    Container(abs_db, "БД АБС", "Oracle", "Хранение данных по депозитам и клиентам")
+}
+
+Rel(client, site, "Подаёт заявку")
+Rel(site, callcenter, "Создание обращения")
+
+Rel(client, ib_web, "Подаёт заявку")
+Rel(ib_web, ib_api, "HTTPS")
+Rel(ib_api, deposit_api, "REST / HTTPS")
+
+Rel(callcenter, deposit_api, "Передача согласованных условий")
+
+Rel(deposit_api, queue, "Публикация событий")
+Rel(queue, deposit_api, "")
+Rel(queue, abs_api, "Асинхронная обработка")
+Rel(abs_api, queue, "")
+
+Rel(abs_api, abs_db, "Чтение / запись")
+
+Rel(bo, deposit_api, "Подтверждает условия депозита")
+
+Rel(deposit_api, sms, "Отправка SMS")
+Rel(sms, client, "SMS-уведомления")
+
+@enduml
