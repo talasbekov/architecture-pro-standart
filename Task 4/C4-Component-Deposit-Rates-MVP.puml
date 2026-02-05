@@ -1,0 +1,34 @@
+@startuml C4-Component-Deposit-Rates-MVP
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title C4 Component — Передача депозитных ставок (MVP)
+
+Person(bo, "Менеджер бэк-офиса")
+Person(operator, "Оператор кол-центра")
+
+System_Ext(partnerCC, "Партнёрский кол-центр")
+System_Ext(fileChannel, "Файловый канал передачи")
+
+System_Boundary(bank, "Банк «Стандарт»") {
+
+    Container(rateModule, "Модуль ставок", "Oracle / АБС", "Централизованное хранение депозитных ставок")
+
+    Component(rateManagement, "Управление ставками", "Обновление и подтверждение депозитных ставок")
+
+    Component(rateExport, "Экспорт ставок", "Формирование и публикация ставок для кол-центров")
+
+    Container(callCenter, "Система кол-центра банка", "Java / PostgreSQL", "Отображение актуальных ставок операторам")
+}
+
+Rel(bo, rateManagement, "Обновляет ставки")
+Rel(rateManagement, rateModule, "Сохраняет изменения")
+
+Rel(rateModule, rateExport, "Передаёт актуальные ставки")
+
+Rel(rateExport, callCenter, "Обновляет ставки")
+Rel(rateExport, fileChannel, "Формирует файл")
+Rel(fileChannel, partnerCC, "Передаёт файл")
+
+Rel(operator, callCenter, "Использует ставки для консультаций")
+
+@enduml

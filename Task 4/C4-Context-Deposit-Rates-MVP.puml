@@ -1,0 +1,26 @@
+@startuml C4-Context-Deposit-Rates-MVP
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title C4 Context — Передача депозитных ставок в кол-центры (MVP)
+
+Person(client, "Клиент")
+Person(operator, "Оператор кол-центра")
+
+System_Ext(partnerCC, "Партнёрский кол-центр", "Внешняя система")
+System_Ext(fileChannel, "Файловый канал передачи", "Передача файлов со ставками")
+
+System_Boundary(bank, "Банк «Стандарт»") {
+
+    System(rateSource, "Система ставок", "Источник актуальных депозитных ставок")
+    System(callCenter, "Система кол-центра банка", "Консультации клиентов")
+}
+
+Rel(client, operator, "Звонок")
+Rel(operator, callCenter, "Работа со ставками")
+
+Rel(rateSource, callCenter, "Передаёт актуальные ставки")
+Rel(rateSource, fileChannel, "Формирует файл со ставками")
+Rel(fileChannel, partnerCC, "Передаёт файл")
+Rel(operator, partnerCC, "Консультации клиентов")
+
+@enduml
