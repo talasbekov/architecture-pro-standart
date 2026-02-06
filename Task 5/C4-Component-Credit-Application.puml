@@ -1,0 +1,37 @@
+@startuml C4-Component-Credit-Application
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Сервис кредитных заявок — C4 Component
+
+System_Boundary(creditApp, "Сервис кредитных заявок") {
+    Component(api, "API подачи заявок", "REST", "Приём заявок от сайта и интернет-банка")
+    Component(preApproved, "Модуль предодобренных предложений", "Business logic", "Формирование и обработка предодобренных кредитных предложений")
+    Component(scoringAdapter, "Адаптер скоринга", "Integration", "Интеграция с системой кредитного скоринга")
+    Component(queue, "Очередь заявок", "Messaging", "Асинхронная передача заявок в кредитный конвейер")
+    Component(statusTracker, "Трекинг статуса заявки", "Business logic", "Хранение и обновление статусов заявок")
+    Component(smsAdapter, "Адаптер SMS", "Integration", "Отправка SMS-кодов и уведомлений клиенту")
+}
+
+System_Ext(site, "Сайт банка")
+System_Ext(internetBank, "Интернет-банк")
+System_Ext(scoring, "Система кредитного скоринга")
+System_Ext(creditPipeline, "Кредитный конвейер")
+System_Ext(sms, "SMS-шлюз")
+
+Rel(site, api, "Подача заявки")
+Rel(internetBank, api, "Подача заявки")
+
+Rel(api, preApproved, "Запрос предложений")
+Rel(api, scoringAdapter, "Инициирует скоринг")
+
+Rel(scoringAdapter, scoring, "REST-запрос")
+
+Rel(api, queue, "Публикация заявки")
+Rel(queue, creditPipeline, "Передача заявки")
+
+Rel(creditPipeline, statusTracker, "Обновление статуса")
+
+Rel(api, smsAdapter, "Запрос SMS")
+Rel(smsAdapter, sms, "Отправка SMS")
+
+@enduml

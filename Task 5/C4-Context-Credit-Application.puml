@@ -1,0 +1,38 @@
+@startuml C4-Context-Credit-Application
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+
+title Онлайн-заявка на кредит — C4 Context
+
+Person(client, "Клиент", "Подаёт заявку на кредит через онлайн-каналы")
+
+System(site, "Сайт банка", "Подача заявки на кредит для новых клиентов")
+System(internetBank, "Интернет-банк", "Подача заявки и предодобренные предложения")
+
+System_Boundary(bank, "Банк «Стандарт»") {
+    System(creditApp, "Сервис кредитных заявок", "Приём и обработка онлайн-заявок")
+    System(scoring, "Система кредитного скоринга", "Расчёт кредитного рейтинга")
+    System(creditPipeline, "Кредитный конвейер", "Бизнес-обработка заявок")
+    System(abs, "АБС", "Учёт и сопровождение кредитов")
+    System(sms, "SMS-шлюз", "Подтверждение операций и уведомления")
+}
+
+System_Ext(bureau, "Бюро кредитных историй", "Предоставляет кредитную историю клиента")
+
+Rel(client, site, "Подаёт заявку")
+Rel(client, internetBank, "Подаёт заявку / получает предложение")
+
+Rel(site, creditApp, "Передаёт заявку")
+Rel(internetBank, creditApp, "Передаёт заявку")
+
+Rel(creditApp, scoring, "Запрос скоринга")
+Rel(scoring, bureau, "Запрос кредитной истории")
+
+Rel(creditApp, creditPipeline, "Передача заявки")
+Rel(creditPipeline, creditApp, "Статус обработки")
+
+Rel(creditPipeline, abs, "Передача данных по кредиту")
+
+Rel(creditApp, sms, "Отправка SMS")
+Rel(sms, client, "SMS-уведомления")
+
+@enduml
