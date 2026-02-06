@@ -1,0 +1,91 @@
+@startuml Интеграция приложений банка Стандарт
+
+!define SYSTEM_COLOR #4A90E2
+!define EXTERNAL_COLOR #E94B3C
+!define LEGACY_COLOR #F5A623
+!define GREY_COLOR #979694
+
+rectangle "Банк «Стандарт»" {
+' Системы
+rectangle "Сайт\n(PHP, React)" as Site SYSTEM_COLOR
+rectangle "Интернет-банк\n(ASP.NET)" as InternetBank SYSTEM_COLOR
+rectangle "АБС\n(Delphi, Oracle)" as ABS LEGACY_COLOR
+rectangle "Система кол-центра\n(Java, PostgreSQL)" as CallCenter SYSTEM_COLOR
+
+rectangle "Кредитный конвейер\n(Camunda, Java)" as CreditPipeline SYSTEM_COLOR
+rectangle "Система скоринга\n(Python, Flask)" as Scoring SYSTEM_COLOR
+rectangle "СМС-шлюз" as SMS SYSTEM_COLOR
+
+rectangle "Email" as Email
+rectangle "Excel\n(ручной расчет)" as Excel
+
+' Люди
+actor "Клиент" as Client
+actor "Фронт-офис\n(отделения)" as FrontOffice
+actor "Бэк-офис\n(депозиты)" as BackOfficeDeposit
+actor "Бэк-офис\n(кредиты)" as BackOfficeCredit
+actor "Оператор\nкол-центра" as Operator
+}
+
+rectangle "Партнёрский кол-центр" as PartnerCC GREY_COLOR
+rectangle "Бюро кредитных историй" as Bureau EXTERNAL_COLOR
+
+
+' ПРОЦЕСС ДЕПОЗИТА
+Client -down-> Operator : Звонок
+Operator -down-> CallCenter : Создание обращения
+CallCenter -down-> ABS : Передача обращения
+PartnerCC -down-> CallCenter : Работа по скриптам
+
+BackOfficeCredit -down-> Excel : Расчет ставок\n(ежедневно)
+BackOfficeCredit -down-> Email : Передача данных\nпо кредитному риску
+
+BackOfficeDeposit -down-> Excel : Расчет ставок\nдля клиента
+BackOfficeDeposit -down-> ABS : Обработка заявки,\nуказание ставки
+BackOfficeDeposit -down-> Email : Ответ с ставкой
+
+ABS -down-> SMS : Отправка СМС
+SMS -down-> Client : Уведомление о ставке
+
+Client -down-> FrontOffice : Визит в отделение
+FrontOffice -down-> ABS : Создание депозита,\nзагрузка документов
+
+' ПРОЦЕСС КРЕДИТА
+Client -right-> FrontOffice : Заявка на кредит
+FrontOffice -down-> ABS : Создание заявки
+
+ABS -right-> CreditPipeline : Передача заявок\n(1 раз/день, БД)
+
+BackOfficeCredit -down-> CreditPipeline : Обработка заявок
+
+CreditPipeline -down-> Scoring : Запрос скоринга\n(REST API)
+
+Scoring -down-> Bureau : Запрос кредитной истории\n(REST API, онлайн)
+Scoring <-left- ABS : Данные о клиенте\n(1 раз/день, БД)
+
+CreditPipeline -up-> ABS : Результат решения\n(1 раз/день)
+
+ABS -up-> Client : Зачисление средств
+
+note right of Excel
+  Ручной процесс:
+  - Ставка ЦБ
+  - Анализ кредитного риска
+  - Расчет ставки депозита
+end note
+
+note right of Scoring
+  Источники данных:
+  - АБС (история клиента)
+  - Бюро кредитных историй
+  - Кредитный конвейер
+end note
+
+@enduml
+[Система кол-центра] → [АБС] (передача обращения)
+
+{Бэк-офис} работает в → [АБС] (видит и обрабатывает заявки)
+
+[АБС] →[Кредитный конвейер Camunda](если это заявка на кредит, то его он отправляет в кредитный конвейер)
+
+{Бэк-офис} работает в →[Кредитный конвейер Camunda]()
